@@ -35,6 +35,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     private static final int REQUEST_WRITE_CAMERA_PERMISSION = 200;
     private int permission;
+    private String messg;
+    private TextView tv;
 
     private String appFolderPath = Environment.getExternalStorageDirectory() + "/Android/Data/CollabAR/";
 
@@ -91,8 +93,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         copyAssetsDataIfNeed();
 
         // Example of a call to a native method
-//        TextView tv = (TextView) findViewById(R.id.sample_text);
-//        tv.setText(stringFromJNI());
+        tv = (TextView) findViewById(R.id.sample_text);
+        tv.setText(messg);
 
         javaCameraView = (JavaCameraView)findViewById(R.id.java_camera_view);
         javaCameraView.setVisibility(View.VISIBLE);
@@ -150,7 +152,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
      * A native method that is implemented by the 'native-lib' native library,
      * which is packaged with this application.
      */
-    public native void stringFromJNI(long matAddrRgba, long matAddrGray);
+    public native String stringFromJNI(long matAddrRgba, long matAddrGray);
 
     @Override
     public void onCameraViewStarted(int width, int height) {
@@ -167,7 +169,15 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         myFrame = inputFrame.rgba();
         newFrame = new Mat();
         //Imgproc.cvtColor(newFrame,newFrame,Imgproc.COLOR_BGR2BGRA);
-        stringFromJNI(myFrame.getNativeObjAddr(), newFrame.getNativeObjAddr());
+        messg = stringFromJNI(myFrame.getNativeObjAddr(), newFrame.getNativeObjAddr());
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                tv.setText(messg);
+            }
+        });
+
         return newFrame;
     }
 
