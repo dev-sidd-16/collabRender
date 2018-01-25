@@ -1,6 +1,8 @@
 #include <jni.h>
 #include <iostream>
 #include <string>
+#include <sys/time.h>
+
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/features2d/features2d.hpp>
@@ -28,8 +30,24 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
 
     cvtColor(mRgb, mGray, CV_RGB2GRAY);
 
-    Mat img = imread("/mnt/sdcard/Android/Data/CollabAR/image.jpg");
+    Mat img = imread("/mnt/sdcard/Android/Data/CollabAR/image1.jpg");
     Mat ref = imread("/mnt/sdcard/Android/Data/CollabAR/marker.jpg");
+
+//    resize(img, img, Size(), 0.25, 0.25);
+//    imwrite( "/mnt/sdcard/Android/Data/CollabAR/image1.jpg", img );
+
+    int width;
+    //height = img.rows;
+    width = img.cols;
+
+    int h, w;
+    h = ref.rows;
+    w = ref.cols;
+
+    float r = width/float(w);
+//    float dim = (width, int(h*r));
+
+    resize(ref, ref, Size(width, int(h*r)), 0, 0, INTER_AREA);
 
     // convert images to grayscale
     Mat imgG, refG;
@@ -49,11 +67,16 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
     const double fxIMG = 1.73*cxIMG;
     const double fyIMG = 1.73*cyIMG;
 
+
+    // TODO: Move reference frame parameter estimation code to another function
     const double heightAbove = 25.0;
     const double cxREF = refG.cols/2;
     const double cyREF = refG.rows/2;
     const double fxREF = cxREF*1.73;
     const double fyREF = cyREF*1.73;
+
+    struct timeval start, end, diff;
+    ::gettimeofday(&start, NULL);
 
     //-- Step 1: Detect the keypoints using SURF Detector
 
@@ -124,10 +147,10 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
 
     stringstream ss;
     ss << nGoodMatches;
-    hello = hello + "No. of Good Matches: " + ss.str();
+    //hello = hello + "No. of Good Matches: " + ss.str();
 
     if(nGoodMatches < 4){
-        hello = hello + "\n Not enough good matches to estimate pose";
+        hello = hello + "Not enough good matches to estimate pose";
     } else{
 
         vector<Point2f> pts1(nGoodMatches);
@@ -147,7 +170,7 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
         }
         ss.str(string());
         ss << inliers.size();
-        hello = hello + "\nNo. of inliers from homography calculation: " + ss.str();
+        //hello = hello + "\nNo. of inliers from homography calculation: " + ss.str();
 
         if (inliers.size() >5) {
 
@@ -170,23 +193,31 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
             Mat rotVec, transVec;
             bool foundPose = solvePnP(p3D, p2D, K, Mat::zeros(5, 1, CV_64F), rotVec, transVec);
             if (foundPose){
-                hello = hello + "\nPose Found! |";
+                //hello = hello + "\nPose Found! |";
                 ss.str(string());
                 ss << rotVec.t();
-                hello = hello + "\nRotation Vector: " + ss.str();
+                hello = hello + "Rotation Vector: " + ss.str();
                 ss.str(string());
                 ss << transVec.t();
                 hello = hello + "\nTranslation Vector: " + ss.str();
             } else{
-                hello = hello + "\nUnable to estimate pose!";
+                hello = hello + "Unable to estimate pose!";
             }
         } else{
 
-            hello = hello + "\nNot enough inliers to estimate pose";
+            hello = hello + "Not enough inliers to estimate pose";
 
         }
 
     }
+
+    ::gettimeofday(&end, NULL);
+    timersub(&end, &start, &diff);
+
+    ss.str(string());
+    ss << diff.tv_usec/1e6;
+    hello = hello + "\nTime elapsed in Pose Estimation: " + ss.str() + " sec.";
+
 
     return env->NewStringUTF(hello.c_str());
 
