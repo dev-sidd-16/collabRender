@@ -30,7 +30,7 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
 
     cvtColor(mRgb, mGray, CV_RGB2GRAY);
 
-    Mat img = imread("/mnt/sdcard/Android/Data/CollabAR/image1.jpg");
+    Mat img = imread("/mnt/sdcard/Android/Data/CollabAR/image4.jpg");
     Mat ref = imread("/mnt/sdcard/Android/Data/CollabAR/marker.jpg");
 
 //    resize(img, img, Size(), 0.25, 0.25);
@@ -69,18 +69,18 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
 
 
     // TODO: Move reference frame parameter estimation code to another function
-    const double heightAbove = 25.0;
     const double cxREF = refG.cols/2;
     const double cyREF = refG.rows/2;
     const double fxREF = cxREF*1.73;
     const double fyREF = cyREF*1.73;
+    const double radius = 0.53/5.5;
 
     struct timeval start, end, diff;
     ::gettimeofday(&start, NULL);
 
     //-- Step 1: Detect the keypoints using SURF Detector
 
-    Ptr<FeatureDetector> detector = ORB::create(numFeaturesDest,1.2f,8,31,0,2,ORB::HARRIS_SCORE,31,20);
+    Ptr<FeatureDetector> detector = ORB::create(numFeaturesDest);
     vector<KeyPoint> keypoints_1, keypoints_2;
     detector->detect(imgG, keypoints_1);
     detector->detect(refG, keypoints_2);
@@ -95,13 +95,24 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
     vector<vector< DMatch > >matches;
     flannBasedMatcher.knnMatch(descriptors_1,descriptors_2,matches,2);
 
+    double max_X = 0; double min_X = 100;
+    double max_Y = 0; double min_Y = 100;
+
     vector<Point3f>  p3d;
     for (int i = 0; i< keypoints_2.size(); i++) {
-        float x = keypoints_2[i].pt.x;	// 2D location in image
-        float y = keypoints_2[i].pt.y;
-        float X = (heightAbove / fxREF)*(x - cxREF);
-        float Y = (heightAbove / fyREF)*(y - cyREF);
-        float Z = 0;
+        double x = keypoints_2[i].pt.x;	// 2D location in image
+        double y = keypoints_2[i].pt.y;
+        double X = (x - cxREF)/cxREF;
+        if( X < min_X )
+            min_X = X;
+        if( X > max_X )
+            max_X = X;
+        double Y = (y - cyREF)/cxREF;
+        if( Y < min_Y )
+            min_Y = Y;
+        if( Y > max_Y )
+            max_Y = Y;
+        double Z = -radius;
         p3d.push_back(cv::Point3f(X, Y, Z));
     }
 
@@ -141,7 +152,7 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
                  vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
 
     //-- Show detected matches
-//    imwrite( "/mnt/sdcard/Android/Data/CollabAR/Good_Matches.jpg", img_matches );
+    imwrite( "/mnt/sdcard/Android/Data/CollabAR/Good_Matches.jpg", img_matches );
 
     int nGoodMatches = good_matches.size();
 
@@ -191,7 +202,7 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
             //make the camera intrinsic parameters matrix
             Mat K = Mat(3, 3, CV_64F, data);
             Mat rotVec, transVec;
-            bool foundPose = solvePnP(p3D, p2D, K, Mat::zeros(5, 1, CV_64F), rotVec, transVec);
+            bool foundPose = solvePnPRansac(p3D, p2D, K, Mat::zeros(5, 1, CV_64F), rotVec, transVec);
             if (foundPose){
                 //hello = hello + "\nPose Found! |";
                 ss.str(string());
@@ -200,6 +211,15 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
                 ss.str(string());
                 ss << transVec.t();
                 hello = hello + "\nTranslation Vector: " + ss.str();
+                double distance = norm(transVec);
+                ss.str(string());
+                ss << distance;
+                hello = hello + "\nDistance: " + ss.str();
+                const double rad = ceil((radius/distance)*fxIMG);
+                ss.str(string());
+                ss << rad;
+                hello = hello + " | Radius: " + ss.str();
+
             } else{
                 hello = hello + "Unable to estimate pose!";
             }

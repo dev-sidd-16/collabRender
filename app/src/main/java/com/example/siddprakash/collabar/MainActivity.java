@@ -227,7 +227,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     }
 
     private void copyAssetsDataIfNeed(){
-        String assetsToCopy[] = {"image1.jpg", "marker.jpg"};
+        String assetsToCopy[] = {"image.jpg", "image3.jpg", "image1.jpg", "image4.jpg", "marker.jpg"};
         for(int i=0; i<assetsToCopy.length; i++){
             String from = assetsToCopy[i];
             String to = appFolderPath+from;
