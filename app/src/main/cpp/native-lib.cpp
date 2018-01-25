@@ -30,7 +30,7 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
 
     cvtColor(mRgb, mGray, CV_RGB2GRAY);
 
-    Mat img = imread("/mnt/sdcard/Android/Data/CollabAR/image4.jpg");
+    Mat img = imread("/mnt/sdcard/Android/Data/CollabAR/image1.jpg");
     Mat ref = imread("/mnt/sdcard/Android/Data/CollabAR/marker.jpg");
 
 //    resize(img, img, Size(), 0.25, 0.25);
@@ -152,7 +152,7 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
                  vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
 
     //-- Show detected matches
-    imwrite( "/mnt/sdcard/Android/Data/CollabAR/Good_Matches.jpg", img_matches );
+//    imwrite( "/mnt/sdcard/Android/Data/CollabAR/Good_Matches.jpg", img_matches );
 
     int nGoodMatches = good_matches.size();
 
@@ -215,10 +215,52 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
                 ss.str(string());
                 ss << distance;
                 hello = hello + "\nDistance: " + ss.str();
-                const double rad = ceil((radius/distance)*fxIMG);
+                const double rad = floor((radius/distance)*fxIMG);
                 ss.str(string());
                 ss << rad;
                 hello = hello + " | Radius: " + ss.str();
+
+                Mat rotVecFull = Mat(3, 3, CV_64F);
+                Rodrigues(rotVec, rotVecFull);
+
+                Mat extrinsic;
+                hconcat(rotVecFull, transVec, extrinsic);
+
+                Mat R;
+                R = K*extrinsic;
+
+                cv::Mat_<double> src(4/*rows*/,1 /* cols */);
+
+                src(0,0)=0;
+                src(1,0)=0;
+                src(2,0)=0;
+                src(3,0)=1;
+
+                cv::Mat_<double> dst = R*src;
+                dst(0,0) = dst(0,0)/dst(2,0);
+                dst(1,0) = dst(1,0)/dst(2,0);
+                dst(2,0) = dst(2,0)/dst(2,0);
+
+                ss.str(string());
+                ss << dst.t();
+                hello = hello + "\nCenter: " + ss.str();
+
+                /* Set Region of Interest */
+
+                double offset_x = floor(dst(0,0)) - rad;
+                double offset_y = floor(dst(1,0)) - rad;
+
+                Rect roi;
+                roi.x = offset_x;
+                roi.y = offset_y;
+                roi.width = 2*rad;
+                roi.height = 2*rad;
+
+                /* Crop the original image to the defined ROI */
+
+                Mat crop = img(roi);
+                imwrite("/mnt/sdcard/Android/Data/CollabAR/sem_cropped.png", crop);
+
 
             } else{
                 hello = hello + "Unable to estimate pose!";
