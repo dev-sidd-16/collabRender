@@ -25,12 +25,13 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
 
     string hello = "";
 
-    Mat &mRgb = *(Mat*)addrRgba;
+    Mat &img = *(Mat*)addrRgba;
     Mat &mGray = *(Mat*)addrGray;
 
-    cvtColor(mRgb, mGray, CV_RGB2GRAY);
+    mGray = img;
+//    cvtColor(img, mGray, CV_BGR2RGB);
 
-    Mat img = imread("/mnt/sdcard/Android/Data/CollabAR/image1.jpg");
+//    Mat img = imread("/mnt/sdcard/Android/Data/CollabAR/image1.jpg");
     Mat ref = imread("/mnt/sdcard/Android/Data/CollabAR/marker.jpg");
 
 //    resize(img, img, Size(), 0.25, 0.25);
@@ -107,12 +108,12 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
             min_X = X;
         if( X > max_X )
             max_X = X;
-        double Y = (y - cyREF)/cxREF;
+        double Y = ((y - cyREF)/cxREF);
         if( Y < min_Y )
             min_Y = Y;
         if( Y > max_Y )
             max_Y = Y;
-        double Z = -radius;
+        double Z = radius;
         p3d.push_back(cv::Point3f(X, Y, Z));
     }
 
@@ -147,7 +148,7 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
 
     //-- Draw only "good" matches
     Mat img_matches;
-    drawMatches( img, keypoints_1, ref, keypoints_2,
+    drawMatches( imgG, keypoints_1, refG, keypoints_2,
                  good_matches, img_matches, Scalar::all(-1), Scalar::all(-1),
                  vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
 
@@ -215,7 +216,7 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
                 ss.str(string());
                 ss << distance;
                 hello = hello + "\nDistance: " + ss.str();
-                const double rad = floor((radius/distance)*fxIMG);
+                const double rad = (radius/distance)*fxIMG;
                 ss.str(string());
                 ss << rad;
                 hello = hello + " | Radius: " + ss.str();
@@ -247,8 +248,8 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
 
                 /* Set Region of Interest */
 
-                double offset_x = floor(dst(0,0)) - rad;
-                double offset_y = floor(dst(1,0)) - rad;
+                double offset_x = dst(0,0)-rad;
+                double offset_y = dst(1,0)-rad;
 
                 Rect roi;
                 roi.x = offset_x;
@@ -258,8 +259,9 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
 
                 /* Crop the original image to the defined ROI */
 
-                Mat crop = img(roi);
-                imwrite("/mnt/sdcard/Android/Data/CollabAR/sem_cropped.png", crop);
+                rectangle(mGray, roi, (1,0,0), 2);
+//                Matat crop = img(roi);
+//                imwrite("/mnt/sdcard/Android/Data/CollabAR/SEM_cropped.png", mGray);
 
 
             } else{

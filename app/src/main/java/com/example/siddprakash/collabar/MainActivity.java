@@ -12,6 +12,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -35,7 +36,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     private static final int REQUEST_WRITE_CAMERA_PERMISSION = 200;
     private int permission;
-    private String messg;
+    private String messg="Capture an Image!";
     private TextView tv;
 
     private String appFolderPath = Environment.getExternalStorageDirectory() + "/Android/Data/CollabAR/";
@@ -44,6 +45,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     private String TAG = "OpenCVDebug";
     private JavaCameraView javaCameraView;
     private Mat myFrame, newFrame;
+
+    private Button click;
+    private Boolean processing = false;
 
     // Used to load the 'native-lib' library on application startup.
     static {
@@ -99,6 +103,14 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         javaCameraView = (JavaCameraView)findViewById(R.id.java_camera_view);
         javaCameraView.setVisibility(View.VISIBLE);
         javaCameraView.setCvCameraViewListener(this);
+
+        click = (Button) findViewById(R.id.btnCap);
+        click.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                processing = true;
+            }
+        });
     }
 
     @Override
@@ -177,7 +189,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 tv.setText(messg);
             }
         });
-
         return newFrame;
     }
 
@@ -227,7 +238,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     }
 
     private void copyAssetsDataIfNeed(){
-        String assetsToCopy[] = {"image.jpg", "image3.jpg", "image1.jpg", "image4.jpg", "marker.jpg"};
+        String assetsToCopy[] = {"image.jpg", "marker.jpg"};
         for(int i=0; i<assetsToCopy.length; i++){
             String from = assetsToCopy[i];
             String to = appFolderPath+from;
