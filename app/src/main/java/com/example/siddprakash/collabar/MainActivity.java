@@ -47,7 +47,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     private Mat myFrame, newFrame;
 
     private Button click;
-    private Boolean processing = false;
+    private boolean processing = false;
+    private boolean flag = false;
 
     // Used to load the 'native-lib' library on application startup.
     static {
@@ -107,9 +108,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         click = (Button) findViewById(R.id.btnCap);
         click.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                processing = true;
-            }
+            public void onClick(View v) { processing = true; }
         });
     }
 
@@ -164,7 +163,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
      * A native method that is implemented by the 'native-lib' native library,
      * which is packaged with this application.
      */
-    public native String stringFromJNI(long matAddrRgba, long matAddrGray);
+    public native String stringFromJNI(long matAddrRgba, long matAddrGray, boolean p);
 
     @Override
     public void onCameraViewStarted(int width, int height) {
@@ -181,14 +180,22 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         myFrame = inputFrame.rgba();
         newFrame = new Mat();
         //Imgproc.cvtColor(newFrame,newFrame,Imgproc.COLOR_BGR2BGRA);
-        messg = stringFromJNI(myFrame.getNativeObjAddr(), newFrame.getNativeObjAddr());
+        messg = stringFromJNI(myFrame.getNativeObjAddr(), newFrame.getNativeObjAddr(), processing);
 
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 tv.setText(messg);
+                if(processing) {
+                    flag = true;
+                }
             }
         });
+        if(flag){
+            processing = false;
+            flag = false;
+        }
+
         return newFrame;
     }
 

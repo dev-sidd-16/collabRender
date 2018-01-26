@@ -21,24 +21,27 @@ JNIEXPORT jstring JNICALL
 Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
         JNIEnv *env,
         jobject /* this */,
-        jlong addrRgba, jlong addrGray) {
+        jlong addrRgba, jlong addrGray, jboolean capture) {
 
+//    bool cap = capture;
     string hello = "";
 
     Mat &img = *(Mat*)addrRgba;
     Mat &mGray = *(Mat*)addrGray;
 
     mGray = img;
-//    cvtColor(img, mGray, CV_BGR2RGB);
-
-//    Mat img = imread("/mnt/sdcard/Android/Data/CollabAR/image1.jpg");
     Mat ref = imread("/mnt/sdcard/Android/Data/CollabAR/marker.jpg");
+    Rect roi;
+    Mat crop;
 
-//    resize(img, img, Size(), 0.25, 0.25);
-//    imwrite( "/mnt/sdcard/Android/Data/CollabAR/image1.jpg", img );
+    /*
+    cvtColor(img, mGray, CV_BGR2RGB);
+    Mat img = imread("/mnt/sdcard/Android/Data/CollabAR/image1.jpg");
+    resize(img, img, Size(), 0.25, 0.25);
+    imwrite( "/mnt/sdcard/Android/Data/CollabAR/image1.jpg", img );
+     */
 
     int width;
-    //height = img.rows;
     width = img.cols;
 
     int h, w;
@@ -46,7 +49,6 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
     w = ref.cols;
 
     float r = width/float(w);
-//    float dim = (width, int(h*r));
 
     resize(ref, ref, Size(width, int(h*r)), 0, 0, INTER_AREA);
 
@@ -60,8 +62,10 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
         cout<< " --(!) Error reading images " << endl;
     }
 
-//    imwrite( "/mnt/sdcard/Android/Data/CollabAR/grayIMG.jpg", imgG );
-//    imwrite( "/mnt/sdcard/Android/Data/CollabAR/grayREF.jpg", refG );
+    /*
+    imwrite( "/mnt/sdcard/Android/Data/CollabAR/grayIMG.jpg", imgG );
+    imwrite( "/mnt/sdcard/Android/Data/CollabAR/grayREF.jpg", refG );
+     */
 
     const double cxIMG = imgG.cols/2;
     const double cyIMG = imgG.rows/2;
@@ -153,7 +157,9 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
                  vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
 
     //-- Show detected matches
-//    imwrite( "/mnt/sdcard/Android/Data/CollabAR/Good_Matches.jpg", img_matches );
+    if(capture) {
+        imwrite("/mnt/sdcard/Android/Data/CollabAR/Good_Matches.jpg", img_matches);
+    }
 
     int nGoodMatches = good_matches.size();
 
@@ -251,19 +257,21 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
                 double offset_x = dst(0,0)-rad;
                 double offset_y = dst(1,0)-rad;
 
-                Rect roi;
+
                 roi.x = offset_x;
                 roi.y = offset_y;
                 roi.width = 2*rad;
                 roi.height = 2*rad;
 
-                /* Crop the original image to the defined ROI */
-
-                rectangle(mGray, roi, (1,0,0), 2);
-//                Matat crop = img(roi);
-//                imwrite("/mnt/sdcard/Android/Data/CollabAR/SEM_cropped.png", mGray);
-
-
+                /* Check if ROI lies in the image and Crop the original image to the defined ROI */
+                bool is_inside = (roi & cv::Rect(0, 0, img.cols, img.rows)) == roi;
+                if(is_inside) {
+                    crop = img(roi);
+                    cvtColor(crop, crop, CV_BGR2RGB);
+                    imwrite("/mnt/sdcard/Android/Data/CollabAR/SEM_cropped.png", crop);
+                    rectangle(mGray, roi, Scalar(255,0,0), 2);
+                    imwrite("/mnt/sdcard/Android/Data/CollabAR/frame_ROI.png", mGray);
+                }
             } else{
                 hello = hello + "Unable to estimate pose!";
             }
@@ -282,6 +290,9 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
     ss << diff.tv_usec/1e6;
     hello = hello + "\nTime elapsed in Pose Estimation: " + ss.str() + " sec.";
 
+    crop.release();
+    imgG.release();
+    refG.release();
 
     return env->NewStringUTF(hello.c_str());
 

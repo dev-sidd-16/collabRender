@@ -19,13 +19,13 @@
 
     <Button
         android:id="@+id/btnCap"
-        android:visibility="invisible"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_alignParentBottom="true"
         android:layout_marginLeft="140dp"
         android:layout_marginRight="140dp"
+        android:layout_marginBottom="15dp"
         android:onClick="OKClicked"
         android:text="Capture" />
 
