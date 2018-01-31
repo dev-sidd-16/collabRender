@@ -29,6 +29,8 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
     Mat &img = *(Mat*)addrRgba;
     Mat &mGray = *(Mat*)addrGray;
 
+
+
     mGray = img;
     Mat ref = imread("/mnt/sdcard/Android/Data/CollabAR/marker.jpg");
     Rect roi;
@@ -71,6 +73,7 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
     const double cyIMG = imgG.rows/2;
     const double fxIMG = 1.73*cxIMG;
     const double fyIMG = 1.73*cyIMG;
+    const double standHeight = 1.18;
 
 
     // TODO: Move reference frame parameter estimation code to another function
@@ -78,7 +81,7 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
     const double cyREF = refG.rows/2;
     const double fxREF = cxREF*1.73;
     const double fyREF = cyREF*1.73;
-    const double radius = 0.53/5.5;
+    const double radius = (standHeight+0.53)/5.5;
 
     struct timeval start, end, diff;
     ::gettimeofday(&start, NULL);
@@ -222,7 +225,7 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
                 ss.str(string());
                 ss << distance;
                 hello = hello + "\nDistance: " + ss.str();
-                const double rad = (radius/distance)*fxIMG;
+                const double rad = ((radius- (standHeight/5.5))/distance)*fxIMG;
                 ss.str(string());
                 ss << rad;
                 hello = hello + " | Radius: " + ss.str();
@@ -254,8 +257,8 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
 
                 /* Set Region of Interest */
 
-                double offset_x = dst(0,0)-rad;
-                double offset_y = dst(1,0)-rad;
+                double offset_x = dst(0,0)-(rad);
+                double offset_y = dst(1,0)-(rad);
 
 
                 roi.x = offset_x;
@@ -265,7 +268,7 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
 
                 /* Check if ROI lies in the image and Crop the original image to the defined ROI */
                 bool is_inside = (roi & cv::Rect(0, 0, img.cols, img.rows)) == roi;
-                if(is_inside) {
+                if(is_inside && capture) {
                     crop = img(roi);
                     cvtColor(crop, crop, CV_BGR2RGB);
                     imwrite("/mnt/sdcard/Android/Data/CollabAR/SEM_cropped.png", crop);
