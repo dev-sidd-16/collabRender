@@ -3,6 +3,8 @@ package com.example.siddprakash.collabar;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
+import android.opengl.GLES20;
+import android.opengl.GLSurfaceView;
 import android.os.Build;
 import android.os.Environment;
 import android.support.annotation.NonNull;
@@ -27,10 +29,16 @@ import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Scanner;
+
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.opengles.GL10;
 
 public class MainActivity extends AppCompatActivity implements CameraBridgeViewBase.CvCameraViewListener2{
 
@@ -49,6 +57,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     private Button click;
     private boolean processing = false;
     private boolean flag = false;
+
+    private GLSurfaceView mySurfaceView;
+    private Sphere sphere;
 
     // Used to load the 'native-lib' library on application startup.
     static {
@@ -76,6 +87,30 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+
+        // Call OpenGLES functions to render and overlay the object
+        mySurfaceView = (GLSurfaceView) findViewById(R.id.my_surface_view);
+        mySurfaceView.setEGLContextClientVersion(2);
+
+        mySurfaceView.setRenderer(new GLSurfaceView.Renderer() {
+            @Override
+            public void onSurfaceCreated(GL10 gl10, EGLConfig config) {
+                mySurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
+                sphere = new Sphere(getApplicationContext());
+            }
+
+            @Override
+            public void onSurfaceChanged(GL10 gl10, int width, int height) {
+                GLES20.glViewport(0,0, width, height);
+            }
+
+            @Override
+            public void onDrawFrame(GL10 gl10) {
+                sphere.draw();
+            }
+        });
 
         permission = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA);
 
@@ -85,14 +120,13 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                     new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.CAMERA},
                     REQUEST_WRITE_CAMERA_PERMISSION);
         }
-
-        if(OpenCVLoader.initDebug()){
-            Log.d(TAG, "OpenCV Initialized!");
-        }
-        else{
-            Log.d(TAG, "OpenCV Initialization Failed!");
-        }
-        setContentView(R.layout.activity_main);
+//
+//        if(OpenCVLoader.initDebug()){
+//            Log.d(TAG, "OpenCV Initialized!");
+//        }
+//        else{
+//            Log.d(TAG, "OpenCV Initialization Failed!");
+//
 
         CreateAppFolderIfNeed();
         copyAssetsDataIfNeed();
@@ -101,6 +135,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         tv = (TextView) findViewById(R.id.sample_text);
         tv.setText(messg);
 
+        // Call OpenCV functions to capture and display frames for registratio
         javaCameraView = (JavaCameraView)findViewById(R.id.java_camera_view);
         javaCameraView.setVisibility(View.VISIBLE);
         javaCameraView.setCvCameraViewListener(this);
@@ -110,6 +145,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             @Override
             public void onClick(View v) { processing = true; }
         });
+
     }
 
     @Override
@@ -245,7 +281,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     }
 
     private void copyAssetsDataIfNeed(){
-        String assetsToCopy[] = {"image.jpg", "marker.jpg"};
+        String assetsToCopy[] = {"image.jpg", "marker.jpg", "sphere.obj"};
         for(int i=0; i<assetsToCopy.length; i++){
             String from = assetsToCopy[i];
             String to = appFolderPath+from;
