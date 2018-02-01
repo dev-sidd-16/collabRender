@@ -73,7 +73,7 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
     const double cyIMG = imgG.rows/2;
     const double fxIMG = 1.73*cxIMG;
     const double fyIMG = 1.73*cyIMG;
-    const double standHeight = 1.18;
+    const double standHeight = 1.4;
 
 
     // TODO: Move reference frame parameter estimation code to another function
@@ -272,9 +272,9 @@ Java_com_example_siddprakash_collabar_MainActivity_stringFromJNI(
                     crop = img(roi);
                     cvtColor(crop, crop, CV_BGR2RGB);
                     imwrite("/mnt/sdcard/Android/Data/CollabAR/SEM_cropped.png", crop);
-                    rectangle(mGray, roi, Scalar(255,0,0), 2);
-                    imwrite("/mnt/sdcard/Android/Data/CollabAR/frame_ROI.png", mGray);
                 }
+                rectangle(mGray, roi, Scalar(255,0,0), 2);
+                imwrite("/mnt/sdcard/Android/Data/CollabAR/frame_ROI.png", mGray);
             } else{
                 hello = hello + "Unable to estimate pose!";
             }
